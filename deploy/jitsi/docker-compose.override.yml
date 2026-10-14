@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  whiteboard:
+    image: elimusphere/excalidraw-backend:2026.3.0-node22
+    restart: unless-stopped
+    environment:
+      CORS_ORIGIN: https://jitsi.elimusphere.co.ke
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3002:80"

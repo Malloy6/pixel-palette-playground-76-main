@@ -10,8 +10,15 @@ CREATE TABLE IF NOT EXISTS users (
   phone VARCHAR(40) NULL,
   first_name VARCHAR(120) NOT NULL,
   last_name VARCHAR(120) NOT NULL,
-  role ENUM('parent', 'learner', 'tutor', 'admin') NOT NULL DEFAULT 'parent',
+  role ENUM('learner', 'tutor', 'admin') NOT NULL DEFAULT 'learner',
   password_hash VARCHAR(255) NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  suspended_at TIMESTAMP NULL,
+  suspension_reason TEXT NULL,
+  terms_version VARCHAR(32) NULL,
+  terms_accepted_at TIMESTAMP NULL,
+  role_agreement_version VARCHAR(32) NULL,
+  role_agreement_accepted_at TIMESTAMP NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -53,6 +60,7 @@ CREATE TABLE IF NOT EXISTS conference_rooms (
   room_name VARCHAR(255) NOT NULL UNIQUE,
   started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   ended_at TIMESTAMP NULL,
+  whiteboard_visible BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT fk_conference_rooms_class FOREIGN KEY (class_id) REFERENCES live_classes(id) ON DELETE CASCADE,
   INDEX idx_conference_rooms_class (class_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

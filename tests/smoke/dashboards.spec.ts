@@ -1,5 +1,5 @@
 /**
- * Dashboard Smoke Tests — Tusome Live
+ * Dashboard Smoke Tests — Elimusphere
  *
  * Verifies that every public and authenticated page/dashboard loads correctly.
  * Uses the test credentials from .env.local (DB: kif3 / Mwa$0152) and a fresh
@@ -83,7 +83,27 @@ test.describe('Public pages', () => {
     await expect(page.locator('input[name="firstName"]')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('input[name="email"]')).toBeVisible();
     await expect(page.locator('input[name="password"]')).toBeVisible();
+    await expect(page.locator('input[name="acceptLegal"]')).toHaveAttribute('required', '');
+    await expect(page.getByRole('link', { name: 'Student Agreement' })).toHaveAttribute(
+      'href',
+      '/legal/student-agreement',
+    );
+    await page.getByRole('button', { name: /Tutor/ }).click();
+    await expect(page.getByRole('link', { name: 'Teacher Agreement' })).toHaveAttribute(
+      'href',
+      '/legal/teacher-agreement',
+    );
     await expect(page.locator('button[type="submit"]')).toBeVisible();
+  });
+
+  test('legal document pages use the shared website layout', async ({ page }) => {
+    await page.goto('/legal/teacher-agreement', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('header')).toBeVisible();
+    await expect(page.locator('header img').first()).toBeVisible();
+    await expect(page.getByRole('navigation').getByText('Classes')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Teacher Agreement' })).toBeVisible();
+    await expect(page.locator('article.legal-document')).toContainText('INDEPENDENT CONTRACTOR STATUS');
+    await expect(page.locator('footer')).toBeVisible();
   });
 });
 
@@ -120,6 +140,21 @@ test.describe('API smoke checks', () => {
     const body = await res.json();
     expect(body).toHaveProperty('message');
   });
+
+  test('POST /api/auth/signup requires legal acceptance', async ({ request }) => {
+    const res = await request.post('/api/auth/signup', {
+      data: {
+        firstName: 'Legal',
+        lastName: 'Test',
+        email: 'legal-consent-test@example.com',
+        phone: '0712345678',
+        password: 'password123',
+        role: 'learner',
+      },
+    });
+    expect(res.status()).toBe(400);
+    expect(await res.json()).toHaveProperty('message');
+  });
 });
 
 // ─── 3. FULL AUTH FLOW → CLASSES DASHBOARD ───────────────────────────────────
@@ -135,7 +170,9 @@ test.describe('Authenticated dashboards', () => {
     await page.fill('input[name="firstName"]', testFirst);
     await page.fill('input[name="lastName"]', testLast);
     await page.fill('input[name="email"]', testEmail);
+    await page.fill('input[name="phone"]', '0712345678');
     await page.fill('input[name="password"]', testPassword);
+    await page.check('input[name="acceptLegal"]');
 
     const [signupResponse] = await Promise.all([
       page.waitForResponse(
@@ -244,6 +281,10 @@ test.describe('Navigation integrity', () => {
     { path: '/about', name: 'About' },
     { path: '/pricing', name: 'Pricing' },
     { path: '/tutors', name: 'Tutors' },
+    { path: "/resources", name: "Resources" },
+    { path: "/contact", name: "Contact" },
+    { path: "/privacy", name: "Privacy Policy" },
+    { path: "/terms", name: "Terms" },
     { path: '/login', name: 'Login' },
     { path: '/signup', name: 'Signup' },
     { path: '/classes', name: 'Classes' },
@@ -266,4 +307,27 @@ test.describe('Navigation integrity', () => {
       expect(bodyText.length, `${route.name}: body must not be empty`).toBeGreaterThan(20);
     });
   }
+
+  test("footer internal links navigate to their pages", async ({ page }) => {
+    const footerLinks = [
+      { name: "Elimusphere home", path: "/" },
+      { name: "Classes", path: "/classes" },
+      { name: "Tutors", path: "/tutors" },
+      { name: "Resources", path: "/resources" },
+      { name: "About Us", path: "/about" },
+      { name: "Contact", path: "/contact" },
+      { name: "Become a tutor", path: "/signup?role=tutor" },
+      { name: "Privacy Policy", path: "/privacy" },
+      { name: "Terms & Conditions", path: "/terms" },
+    ];
+
+    for (const link of footerLinks) {
+      await page.goto("/", { waitUntil: "domcontentloaded" });
+      const footerLink = page.locator("footer").getByRole("link", { name: link.name });
+      await expect(footerLink).toHaveAttribute("href", link.path);
+      await footerLink.click();
+      await page.waitForURL((url) => `${url.pathname}${url.search}` === link.path);
+      await expect(page.locator("body")).not.toBeEmpty();
+    }
+  });
 });

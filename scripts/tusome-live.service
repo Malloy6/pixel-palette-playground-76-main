@@ -1,0 +1,21 @@
+[Unit]
+Description=TuSome Live production server
+After=network.target
+
+[Service]
+Type=simple
+User=kif3
+WorkingDirectory=/home/kif3/pixel-palette-playground-76-main
+EnvironmentFile=/home/kif3/pixel-palette-playground-76-main/.env.local
+# Root-owned deployment configuration, including the path to the private JaaS
+# key file. The PEM itself is readable only by this service's `kif3` user.
+EnvironmentFile=-/etc/elimusphere.env
+Environment=NODE_ENV=production
+ExecStart=/home/kif3/pixel-palette-playground-76-main/scripts/start-prod.sh
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

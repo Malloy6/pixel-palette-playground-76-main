@@ -28,10 +28,9 @@ const password = process.env.DB_PASSWORD;
 const database = process.env.DB_NAME || 'tusomeonline';
 const demoPassword = 'TusomeDemo2026!';
 const demoUsers = [
-  ['Parent', 'Demo', 'parent.demo@tusomelive.test', '+254700000001', 'parent'],
-  ['Learner', 'Demo', 'learner.demo@tusomelive.test', '+254700000002', 'learner'],
-  ['Tutor', 'Demo', 'tutor.demo@tusomelive.test', '+254700000003', 'tutor'],
-  ['Admin', 'Demo', 'admin.demo@tusomelive.test', '+254700000004', 'admin'],
+  ['Learner', 'Demo', 'learner.demo@elimusphere.test', '+254700000002', 'learner'],
+  ['Tutor', 'Demo', 'tutor.demo@elimusphere.test', '+254700000003', 'tutor'],
+  ['Admin', 'Demo', 'admin.demo@elimusphere.test', '+254700000004', 'admin'],
 ];
 
 function hashPassword(password) {
@@ -72,12 +71,24 @@ async function setupSchema() {
         phone VARCHAR(40),
         first_name VARCHAR(120) NOT NULL,
         last_name VARCHAR(120) NOT NULL,
-        role VARCHAR(16) NOT NULL DEFAULT 'parent',
+        role VARCHAR(16) NOT NULL DEFAULT 'learner',
         password_hash VARCHAR(255) NOT NULL,
+        terms_version VARCHAR(32),
+        terms_accepted_at TIMESTAMPTZ,
+        role_agreement_version VARCHAR(32),
+        role_agreement_accepted_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_version VARCHAR(32)");
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ");
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS role_agreement_version VARCHAR(32)");
+    await client.query(
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS role_agreement_accepted_at TIMESTAMPTZ",
+    );
+
+    await client.query('DELETE FROM users WHERE email = $1', ['parent.demo@elimusphere.test']);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS auth_sessions (
@@ -117,9 +128,13 @@ async function setupSchema() {
         jitsi_domain VARCHAR(120) NOT NULL DEFAULT 'meet.jit.si',
         room_name VARCHAR(255) NOT NULL UNIQUE,
         started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-        ended_at TIMESTAMPTZ NULL
+        ended_at TIMESTAMPTZ NULL,
+        whiteboard_visible BOOLEAN NOT NULL DEFAULT FALSE
       )
     `);
+    await client.query(
+      "ALTER TABLE conference_rooms ADD COLUMN IF NOT EXISTS whiteboard_visible BOOLEAN NOT NULL DEFAULT FALSE",
+    );
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS conference_participants (

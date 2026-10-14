@@ -9,10 +9,10 @@ export function AppLoadingScreen({ className }: { className?: string }) {
         className,
       )}
       role="status"
-      aria-label="Loading Tusome Live"
+      aria-label="Loading Elimusphere"
     >
       <div className="flex w-full max-w-xs flex-col items-center gap-5 text-center">
-        <BrandLogo imageClassName="h-20 w-full" />
+        <BrandLogo imageClassName="h-28 w-28" />
         <div className="h-1.5 w-36 overflow-hidden rounded-full bg-secondary">
           <div className="h-full w-1/2 animate-[loading-slide_1.15s_ease-in-out_infinite] rounded-full bg-[image:var(--gradient-hero)]" />
         </div>
